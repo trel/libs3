@@ -80,6 +80,9 @@ typedef struct RequestComputedValues
     // Content-MD5 header (or empty)
     char md5Header[128];
 
+    // Date header (or empty)
+    char dateHeader [128];
+
     // Content-Disposition header (or empty)
     char contentDispositionHeader[128];
 
@@ -350,6 +353,12 @@ static S3Status compose_amz_headers(const RequestParams *params,
     strftime(date, sizeof(date), "%a, %d %b %Y %H:%M:%S GMT", gmtime_r(&now, &gmt));
     headers_append(1, "x-amz-date: %s", date);
 
+    // Capture the date for possible use in StringToSign
+    if ((params->bucketContext.stsDate == S3STSDateOnly) ||
+        (params->bucketContext.stsDate == S3STSAmzAndDate)) { 
+       snprintf(values->dateHeader, sizeof(values->dateHeader),"Date: %s", date);
+    }
+
     if (params->httpRequestType == HttpRequestTypeCOPY) {
         // Add the x-amz-copy-source header
         if (params->copySourceBucketName && params->copySourceBucketName[0] &&
@@ -608,7 +617,8 @@ static void header_gnome_sort(const char **headers, int size)
 
 
 // Canonicalizes the x-amz- headers into the canonicalizedAmzHeaders buffer
-static void canonicalize_amz_headers(RequestComputedValues *values)
+static void canonicalize_amz_headers(const RequestParams *params,
+                                    RequestComputedValues *values)
 {
     // Make a copy of the headers that will be sorted
     const char *sortedHeaders[S3_MAX_METADATA_COUNT];
@@ -636,6 +646,13 @@ static void canonicalize_amz_headers(RequestComputedValues *values)
             // Skip the header name and space
             c += (lastHeaderLen + 1);
         }
+        // Else omit x-amz-date if required
+        else if((params->bucketContext.stsDate == S3STSDateOnly) &&
+                !strncmp(header, "x-amz-date", sizeof("x-amz-date")-1))  {
+            while (*c) {
+                c++;
+            }
+        }
         // Else this is a new header
         else {
             // Copy in everything up to the space in the ": "
@@ -656,7 +673,7 @@ static void canonicalize_amz_headers(RequestComputedValues *values)
                 while (is_blank(*c)) {
                     c++;
                 }
-                // Also, what has most recently been copied into buffer amy
+                // Also, what has most recently been copied into buffer may
                 // have been whitespace, and since we're folding whitespace
                 // out around this newline sequence, back buffer up over
                 // any whitespace it contains
@@ -733,9 +750,9 @@ static S3Status compose_auth_header(const RequestParams *params,
     // 17 bytes for HTTP-Verb + \n
     // 129 bytes for Content-MD5 + \n
     // 129 bytes for Content-Type + \n
-    // 1 byte for empty Date + \n
+    // 129 bytes for Date + \n
     // CanonicalizedAmzHeaders & CanonicalizedResource
-    char signbuf[17 + 129 + 129 + 1 + 
+    char signbuf[17 + 129 + 129 + 129 + 
                  (sizeof(values->canonicalizedAmzHeaders) - 1) +
                  (sizeof(values->canonicalizedResource) - 1) + 1];
     int len = 0;
@@ -756,7 +773,9 @@ static S3Status compose_auth_header(const RequestParams *params,
         ("%s\n", values->contentTypeHeader[0] ? 
          &(values->contentTypeHeader[sizeof("Content-Type: ") - 1]) : "");
 
-    signbuf_append("%s", "\n"); // Date - we always use x-amz-date
+    // append the date header, if populated
+    signbuf_append("%s\n", values->dateHeader[0] ? 
+                   &(values->dateHeader[sizeof("Date: ") - 1]) : "");
 
     signbuf_append("%s", values->canonicalizedAmzHeaders);
 
@@ -942,6 +961,7 @@ static S3Status setup_curl(Request *request,
     append_standard_header(cacheControlHeader);
     append_standard_header(contentTypeHeader);
     append_standard_header(md5Header);
+    append_standard_header(dateHeader);
     append_standard_header(contentDispositionHeader);
     append_standard_header(contentEncodingHeader);
     append_standard_header(expiresHeader);
@@ -1212,7 +1232,7 @@ void request_perform(const RequestParams *params, S3RequestContext *context)
     }
 
     // Compute the canonicalized amz headers
-    canonicalize_amz_headers(&computed);
+    canonicalize_amz_headers(params, &computed);
 
     // Compute the canonicalized resource
     canonicalize_resource(params->bucketContext.bucketName,

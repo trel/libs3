@@ -48,7 +48,8 @@ void S3_put_object(const S3BucketContext *bucketContext, const char *key,
           bucketContext->uriStyle,                    // uriStyle
           bucketContext->accessKeyId,                 // accessKeyId
           bucketContext->secretAccessKey,             // secretAccessKey
-          bucketContext->securityToken },             // securityToken
+          bucketContext->securityToken,               // securityToken
+          bucketContext->stsDate },                   // stsDate
         key,                                          // key
         0,                                            // queryParams
         0,                                            // subResource
@@ -208,7 +209,8 @@ void S3_copy_object(const S3BucketContext *bucketContext, const char *key,
           bucketContext->uriStyle,                    // uriStyle
           bucketContext->accessKeyId,                 // accessKeyId
           bucketContext->secretAccessKey,             // secretAccessKey
-          bucketContext->securityToken },             // securityToken
+          bucketContext->securityToken,               // securityToken
+          bucketContext->stsDate },                   // stsDate
         destinationKey ? destinationKey : key,        // key
         0,                                            // queryParams
         0,                                            // subResource
@@ -249,7 +251,8 @@ void S3_get_object(const S3BucketContext *bucketContext, const char *key,
           bucketContext->uriStyle,                    // uriStyle
           bucketContext->accessKeyId,                 // accessKeyId
           bucketContext->secretAccessKey,             // secretAccessKey
-          bucketContext->securityToken },             // securityToken
+          bucketContext->securityToken,               // securityToken
+          bucketContext->stsDate },                   // stsDate
         key,                                          // key
         0,                                            // queryParams
         0,                                            // subResource
@@ -288,7 +291,8 @@ void S3_head_object(const S3BucketContext *bucketContext, const char *key,
           bucketContext->uriStyle,                    // uriStyle
           bucketContext->accessKeyId,                 // accessKeyId
           bucketContext->secretAccessKey,             // secretAccessKey
-          bucketContext->securityToken },             // securityToken
+          bucketContext->securityToken,               // securityToken
+          bucketContext->stsDate },                   // stsDate
         key,                                          // key
         0,                                            // queryParams
         0,                                            // subResource
@@ -327,7 +331,8 @@ void S3_delete_object(const S3BucketContext *bucketContext, const char *key,
           bucketContext->uriStyle,                    // uriStyle
           bucketContext->accessKeyId,                 // accessKeyId
           bucketContext->secretAccessKey,             // secretAccessKey
-          bucketContext->securityToken },             // securityToken
+          bucketContext->securityToken,               // securityToken
+          bucketContext->stsDate },                   // stsDate
         key,                                          // key
         0,                                            // queryParams
         0,                                            // subResource

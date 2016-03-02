@@ -64,6 +64,7 @@ static S3Protocol protocolG = S3ProtocolHTTPS;
 static S3UriStyle uriStyleG = S3UriStylePath;
 static int retriesG = 5;
 static int verifyPeerG = 0;
+static S3STSDate = S3STSAmzOnly;
 
 
 // Environment variables, saved as globals ----------------------------------
@@ -201,6 +202,7 @@ static void usageExit(FILE *out)
 "   -r/--retries         : retry retryable failures this number of times\n"
 "                          (default is 5)\n"
 "   -v/--verify-peer     : verify peer SSL certificate (default is no)\n"
+"   -d/--date-header     : use date header in StringToSign (default is to use x-amz-date only)\n"
 "\n"
 "   Environment:\n"
 "\n"
@@ -742,6 +744,7 @@ static struct option longOptionsG[] =
     { "show-properties",      no_argument,        0,  's' },
     { "retries",              required_argument,  0,  'r' },
     { "verify-peer",          no_argument,        0,  'v' },
+    { "date-header",          no_argument,        0,  'd' },
     { 0,                      0,                  0,   0  }
 };
 
@@ -913,7 +916,8 @@ static void list_service(int allDetails)
     };
 
     do {
-        S3_list_service(protocolG, accessKeyIdG, secretAccessKeyG, 0, 0, 0, 
+        S3_list_service(protocolG, stsDateG, accessKeyIdG,
+                        secretAccessKeyG, 0, 0, 0, 
                         &listServiceHandler, &data);
     } while (S3_status_is_retryable(statusG) && should_retry());
 
@@ -956,7 +960,8 @@ static void test_bucket(int argc, char **argv, int optindex)
 
     char locationConstraint[64];
     do {
-        S3_test_bucket(protocolG, uriStyleG, accessKeyIdG, secretAccessKeyG, 0,
+        S3_test_bucket(protocolG, stsDateG, uriStyleG, accessKeyIdG,
+                       secretAccessKeyG, 0,
                        0, bucketName, sizeof(locationConstraint),
                        locationConstraint, 0, &responseHandler, 0);
     } while (S3_status_is_retryable(statusG) && should_retry());
@@ -1055,7 +1060,8 @@ static void create_bucket(int argc, char **argv, int optindex)
     };
 
     do {
-        S3_create_bucket(protocolG, accessKeyIdG, secretAccessKeyG, 0,
+        S3_create_bucket(protocolG, stsDateG, accessKeyIdG,
+                         secretAccessKeyG, 0,
                          0, bucketName, cannedAcl, locationConstraint, 0,
                          &responseHandler, 0);
     } while (S3_status_is_retryable(statusG) && should_retry());
@@ -1095,7 +1101,8 @@ static void delete_bucket(int argc, char **argv, int optindex)
     };
 
     do {
-        S3_delete_bucket(protocolG, uriStyleG, accessKeyIdG, secretAccessKeyG,
+        S3_delete_bucket(protocolG, stsDateG, uriStyleG, accessKeyIdG,
+                         secretAccessKeyG,
                          0, 0, bucketName, 0, &responseHandler, 0);
     } while (S3_status_is_retryable(statusG) && should_retry());
 
@@ -1253,7 +1260,8 @@ static void list_bucket(const char *bucketName, const char *prefix,
         uriStyleG,
         accessKeyIdG,
         secretAccessKeyG,
-        0
+        0,
+        stsDateG
     };
 
     S3ListBucketHandler listBucketHandler =
@@ -1679,7 +1687,8 @@ static void list_multipart_uploads(int argc, char **argv, int optindex)
             uriStyleG,
             accessKeyIdG,
             secretAccessKeyG,
-            0
+            0,
+            stsDateG
         };
 
         S3ListMultipartUploadsHandler listMultipartUploadsHandler =
@@ -1801,7 +1810,8 @@ static void list_parts(int argc, char **argv, int optindex)
             uriStyleG,
             accessKeyIdG,
             secretAccessKeyG,
-            0
+            0,
+            stsDateG
         };
 
         S3ListPartsHandler listPartsHandler =
@@ -1900,7 +1910,8 @@ static void abort_multipart_upload(int argc, char **argv, int optindex)
             uriStyleG,
             accessKeyIdG,
             secretAccessKeyG,
-            0
+            0,
+            stsDateG
         };
 
         S3AbortMultipartUploadHandler abortMultipartUploadHandler =
@@ -1963,7 +1974,8 @@ static void delete_object(int argc, char **argv, int optindex)
         uriStyleG,
         accessKeyIdG,
         secretAccessKeyG,
-        0
+        0,
+        stsDateG
     };
 
     S3ResponseHandler responseHandler =
@@ -2090,7 +2102,8 @@ static int try_get_parts_info(const char *bucketName, const char *key,
         uriStyleG,
         accessKeyIdG,
         secretAccessKeyG,
-        0
+        0,
+        stsDateG
     };
 
     S3ListPartsHandler listPartsHandler =
@@ -2346,7 +2359,8 @@ static void put_object(int argc, char **argv, int optindex)
         uriStyleG,
         accessKeyIdG,
         secretAccessKeyG,
-        0
+        0,
+        stsDateG
     };
 
     S3PutProperties putProperties =
@@ -2673,7 +2687,8 @@ static void copy_object(int argc, char **argv, int optindex)
         uriStyleG,
         accessKeyIdG,
         secretAccessKeyG,
-        0
+        0,
+        stsDateG
     };
 
     S3PutProperties putProperties =
@@ -2855,7 +2870,8 @@ static void get_object(int argc, char **argv, int optindex)
         uriStyleG,
         accessKeyIdG,
         secretAccessKeyG,
-        0
+        0,
+        stsDateG
     };
 
     S3GetConditions getConditions =
@@ -2930,7 +2946,8 @@ static void head_object(int argc, char **argv, int optindex)
         uriStyleG,
         accessKeyIdG,
         secretAccessKeyG,
-        0
+        0,
+        stsDateG
     };
 
     S3ResponseHandler responseHandler =
@@ -3010,7 +3027,8 @@ static void generate_query_string(int argc, char **argv, int optindex)
         uriStyleG,
         accessKeyIdG,
         secretAccessKeyG,
-        0
+        0,
+        stsDateG
     };
 
     char buffer[S3_MAX_AUTHENTICATED_QUERY_STRING_SIZE];
@@ -3113,7 +3131,8 @@ void get_acl(int argc, char **argv, int optindex)
         uriStyleG,
         accessKeyIdG,
         secretAccessKeyG,
-        0
+        0,
+        stsDateG
     };
 
     S3ResponseHandler responseHandler =
@@ -3277,7 +3296,8 @@ void set_acl(int argc, char **argv, int optindex)
         uriStyleG,
         accessKeyIdG,
         secretAccessKeyG,
-        0
+        0,
+        stsDateG
     };
 
     S3ResponseHandler responseHandler =
@@ -3370,7 +3390,8 @@ void get_logging(int argc, char **argv, int optindex)
         uriStyleG,
         accessKeyIdG,
         secretAccessKeyG,
-        0
+        0,
+        stsDateG
     };
 
     S3ResponseHandler responseHandler =
@@ -3537,7 +3558,8 @@ void set_logging(int argc, char **argv, int optindex)
         uriStyleG,
         accessKeyIdG,
         secretAccessKeyG,
-        0
+        0,
+        stsDateG
     };
 
     S3ResponseHandler responseHandler =
@@ -3598,6 +3620,9 @@ int main(int argc, char **argv)
             break;
         case 'v':
             verifyPeerG = S3_INIT_VERIFY_PEER;
+            break;
+        case 'd':
+            stsDateG = S3STSDateOnly;
             break;
         }
         default:

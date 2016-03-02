@@ -425,6 +425,25 @@ typedef enum
 
 
 /**
+ * S3STSDate represents which header(s) contain(s) the date in the StringToSign.
+ *
+ * Some S3 servers require the Date header to be populated, even if
+ * x-amz-date contains the definitive timestamp for a request.
+ *
+ * S3STSAmzOnly indicates that only the x-amz-date header should be used.
+ * S3STSDateOnly indicates that only the Date header should be used.
+ * S3STSAmzAndDate indicates that both x-amz-date and the Date header
+ * should be used. 
+ **/
+typedef enum
+{
+    S3STSAmzOnly                     = 0,
+    S3STSDateOnly                    = 1,
+    S3STSAmzAndDate                  = 2
+} S3STSDate;
+
+
+/**
  * S3GranteeType defines the type of Grantee used in an S3 ACL Grant.
  * Amazon Customer By Email - identifies the Grantee using their Amazon S3
  *     account email address
@@ -711,6 +730,11 @@ typedef struct S3BucketContext
      *  The Amazon Security Token used to generate Temporary Security Credentials
      **/
     const char *securityToken;
+
+    /**
+     *  The date header style to use in the StringToSign
+     **/
+    S3STSDate stsDate;
 } S3BucketContext;
 
 
@@ -1732,6 +1756,7 @@ S3Status S3_generate_authenticated_query_string
  * Lists all S3 buckets belonging to the access key id.
  *
  * @param protocol gives the protocol to use for this request
+ * @param stsDate gives the date header to be used in the StringToSign
  * @param accessKeyId gives the Amazon Access Key ID for which to list owned
  *        buckets
  * @param secretAccessKey gives the Amazon Secret Access Key for which to list
@@ -1748,7 +1773,7 @@ S3Status S3_generate_authenticated_query_string
  * @param callbackData will be passed in as the callbackData parameter to
  *        all callbacks for this request
  **/
-void S3_list_service(S3Protocol protocol, const char *accessKeyId,
+void S3_list_service(S3Protocol protocol, S3STSDate stsDate, const char *accessKeyId,
                      const char *secretAccessKey, const char *securityToken,
                      const char *hostName, S3RequestContext *requestContext,
                      const S3ListServiceHandler *handler,
@@ -1764,6 +1789,7 @@ void S3_list_service(S3Protocol protocol, const char *accessKeyId,
  *
  * @param protocol gives the protocol to use for this request
  * @param uriStyle gives the URI style to use for this request
+ * @param stsDate gives the date header to be used in the StringToSign
  * @param accessKeyId gives the Amazon Access Key ID for which to list owned
  *        buckets
  * @param secretAccessKey gives the Amazon Secret Access Key for which to list
@@ -1791,6 +1817,7 @@ void S3_list_service(S3Protocol protocol, const char *accessKeyId,
  *        all callbacks for this request
  **/
 void S3_test_bucket(S3Protocol protocol, S3UriStyle uriStyle,
+                    S3STSDate stsDate,
                     const char *accessKeyId, const char *secretAccessKey,
                     const char *securityToken, const char *hostName, 
                     const char *bucketName, int locationConstraintReturnSize,
@@ -1803,6 +1830,7 @@ void S3_test_bucket(S3Protocol protocol, S3UriStyle uriStyle,
  * Creates a new bucket.
  *
  * @param protocol gives the protocol to use for this request
+ * @param stsDate gives the date header to be used in the StringToSign
  * @param accessKeyId gives the Amazon Access Key ID for which to list owned
  *        buckets
  * @param secretAccessKey gives the Amazon Secret Access Key for which to list
@@ -1823,7 +1851,8 @@ void S3_test_bucket(S3Protocol protocol, S3UriStyle uriStyle,
  * @param callbackData will be passed in as the callbackData parameter to
  *        all callbacks for this request
  **/
-void S3_create_bucket(S3Protocol protocol, const char *accessKeyId,
+void S3_create_bucket(S3Protocol protocol, S3STSDate stsDate,
+                      const char *accessKeyId,
                       const char *secretAccessKey, const char *securityToken,
                       const char *hostName, const char *bucketName,
                       S3CannedAcl cannedAcl, const char *locationConstraint,
@@ -1837,6 +1866,7 @@ void S3_create_bucket(S3Protocol protocol, const char *accessKeyId,
  *
  * @param protocol gives the protocol to use for this request
  * @param uriStyle gives the URI style to use for this request
+ * @param stsDate gives the date header to be used in the StringToSign
  * @param accessKeyId gives the Amazon Access Key ID for which to list owned
  *        buckets
  * @param secretAccessKey gives the Amazon Secret Access Key for which to list
@@ -1855,6 +1885,7 @@ void S3_create_bucket(S3Protocol protocol, const char *accessKeyId,
  *        all callbacks for this request
  **/
 void S3_delete_bucket(S3Protocol protocol, S3UriStyle uriStyle,
+                      S3STSDate stsDate,
                       const char *accessKeyId, const char *secretAccessKey,
                       const char *securityToken, const char *hostName, 
                       const char *bucketName, S3RequestContext *requestContext,
