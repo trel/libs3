@@ -65,7 +65,7 @@ static S3UriStyle uriStyleG = S3UriStylePath;
 static int retriesG = 5;
 static int verifyPeerG = 0;
 static int useSignatureV4G = 0;
-static S3STSDate = S3STSAmzOnly;
+static S3STSDate stsDateG = S3STSAmzOnly;
 
 
 // Environment variables, saved as globals ----------------------------------
@@ -3600,7 +3600,7 @@ int main(int argc, char **argv)
     // Parse args
     while (1) {
         int idx = 0;
-        int c = getopt_long(argc, argv, "vfhus4r:", longOptionsG, &idx);
+        int c = getopt_long(argc, argv, "dvfhus4r:", longOptionsG, &idx);
 
         if (c == -1) {
             // End of options
