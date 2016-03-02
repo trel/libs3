@@ -351,12 +351,15 @@ static S3Status compose_amz_headers(const RequestParams *params,
     char date[64];
     struct tm gmt;
     strftime(date, sizeof(date), "%a, %d %b %Y %H:%M:%S GMT", gmtime_r(&now, &gmt));
-    headers_append(1, "x-amz-date: %s", date);
+
+    // Omit x-amz-date if required
+    if(params->bucketContext.stsDate != S3STSDateOnly) {
+        headers_append(1, "x-amz-date: %s", date);
+    }
 
     // Capture the date for possible use in StringToSign
-    if ((params->bucketContext.stsDate == S3STSDateOnly) ||
-        (params->bucketContext.stsDate == S3STSAmzAndDate)) { 
-       snprintf(values->dateHeader, sizeof(values->dateHeader),"Date: %s", date);
+    if (params->bucketContext.stsDate != S3STSAmzOnly) {
+        snprintf(values->dateHeader, sizeof(values->dateHeader),"Date: %s", date);
     }
 
     if (params->httpRequestType == HttpRequestTypeCOPY) {
@@ -617,8 +620,7 @@ static void header_gnome_sort(const char **headers, int size)
 
 
 // Canonicalizes the x-amz- headers into the canonicalizedAmzHeaders buffer
-static void canonicalize_amz_headers(const RequestParams *params,
-                                    RequestComputedValues *values)
+static void canonicalize_amz_headers(RequestComputedValues *values)
 {
     // Make a copy of the headers that will be sorted
     const char *sortedHeaders[S3_MAX_METADATA_COUNT];
@@ -639,19 +641,12 @@ static void canonicalize_amz_headers(const RequestParams *params,
         const char *header = sortedHeaders[i];
         const char *c = header;
         // If the header names are the same, append the next value
-        if ((i > 0) && 
+        if ((i > 0) &&
             !strncmp(header, sortedHeaders[i - 1], lastHeaderLen)) {
             // Replacing the previous newline with a comma
             *(buffer - 1) = ',';
             // Skip the header name and space
             c += (lastHeaderLen + 1);
-        }
-        // Else omit x-amz-date if required
-        else if((params->bucketContext.stsDate == S3STSDateOnly) &&
-                !strncmp(header, "x-amz-date", sizeof("x-amz-date")-1))  {
-            while (*c) {
-                c++;
-            }
         }
         // Else this is a new header
         else {
@@ -781,6 +776,11 @@ static S3Status compose_auth_header(const RequestParams *params,
 
     signbuf_append("%s", values->canonicalizedResource);
 
+// DEBUG CODE
+    fprintf(stdout,"---String to sign:---\n");
+    fprintf(stdout,"%s",(unsigned char *) signbuf);
+    fprintf(stdout,"\n---\n\n");
+// /DEBUG CODE
     // Generate an HMAC-SHA-1 of the signbuf
     unsigned char hmac[20];
 
@@ -1232,7 +1232,7 @@ void request_perform(const RequestParams *params, S3RequestContext *context)
     }
 
     // Compute the canonicalized amz headers
-    canonicalize_amz_headers(params, &computed);
+    canonicalize_amz_headers(&computed);
 
     // Compute the canonicalized resource
     canonicalize_resource(params->bucketContext.bucketName,
