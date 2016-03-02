@@ -808,11 +808,6 @@ static S3Status compose_auth_header(const RequestParams *params,
 
     signbuf_append("%s", values->canonicalizedResource);
 
-// DEBUG CODE
-    fprintf(stdout,"---String to sign:---\n");
-    fprintf(stdout,"%s",(unsigned char *) signbuf);
-    fprintf(stdout,"\n---\n\n");
-// /DEBUG CODE
     // Generate an HMAC-SHA-1 of the signbuf
     unsigned char hmac[20];
 
