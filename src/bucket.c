@@ -264,7 +264,7 @@ void S3_create_bucket(S3Protocol protocol, S3STSDate stsDate, const char *access
         0,                                       // cacheControl
         0,                                       // contentDispositionFilename
         0,                                       // contentEncoding
-        0,                                       // expires
+       -1,                                       // expires
         cannedAcl,                               // cannedAcl
         0,                                       // metaDataCount
         0,                                       // metaData
