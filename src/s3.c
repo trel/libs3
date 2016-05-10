@@ -960,7 +960,7 @@ static void test_bucket(int argc, char **argv, int optindex)
 
     char locationConstraint[64];
     do {
-        S3_test_bucket(protocolG, stsDateG, uriStyleG, accessKeyIdG,
+        S3_test_bucket(protocolG, uriStyleG, stsDateG, accessKeyIdG,
                        secretAccessKeyG, 0,
                        0, bucketName, sizeof(locationConstraint),
                        locationConstraint, 0, &responseHandler, 0);
@@ -1101,7 +1101,7 @@ static void delete_bucket(int argc, char **argv, int optindex)
     };
 
     do {
-        S3_delete_bucket(protocolG, stsDateG, uriStyleG, accessKeyIdG,
+        S3_delete_bucket(protocolG, uriStyleG, stsDateG, accessKeyIdG,
                          secretAccessKeyG,
                          0, 0, bucketName, 0, &responseHandler, 0);
     } while (S3_status_is_retryable(statusG) && should_retry());
