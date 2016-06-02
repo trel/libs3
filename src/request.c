@@ -1201,6 +1201,7 @@ void request_perform(const RequestParams *params, S3RequestContext *context)
 
     // These will hold the computed values
     RequestComputedValues computed;
+    memset(&computed, 0, sizeof(computed));
 
     // Validate the bucket name
     if (params->bucketContext.bucketName && 
