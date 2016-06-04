@@ -2494,6 +2494,7 @@ upload:
                         uriStyleG,
                         accessKeyIdG,
                         secretAccessKeyG,
+                        0,
                         0
                     };
 
@@ -2628,6 +2629,7 @@ static void copy_object(int argc, char **argv, int optindex)
         uriStyleG,
         accessKeyIdG,
         secretAccessKeyG,
+        0,
         0
     };
     S3ListBucketHandler listBucketHandler =
