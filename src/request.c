@@ -604,7 +604,7 @@ static S3Status compose_standard_headers(const RequestParams *params,
 static S3Status encode_key(const RequestParams *params,
                            RequestComputedValues *values)
 {
-    return (urlEncode(values->urlEncodedKey, params->key, S3_MAX_KEY_SIZE) ?
+    return (urlEncode(values->urlEncodedKey, params->key, S3_MAX_KEY_SIZE, 0) ?
             S3StatusOK : S3StatusUriTooLong);
 }
 
@@ -1893,7 +1893,7 @@ S3Status S3_generate_authenticated_query_string
     // URL encode the key
     char urlEncodedKey[S3_MAX_KEY_SIZE * 3];
     if (key) {
-        urlEncode(urlEncodedKey, key, strlen(key));
+        urlEncode(urlEncodedKey, key, strlen(key), 0);
     }
     else {
         urlEncodedKey[0] = 0;
@@ -1937,7 +1937,7 @@ S3Status S3_generate_authenticated_query_string
 
     // Now urlEncode that
     char signature[sizeof(b64) * 3];
-    urlEncode(signature, b64, b64Len);
+    urlEncode(signature, b64, b64Len, 1);
 
     // Finally, compose the uri, with params:
     // ?AWSAccessKeyId=xxx[&Expires=]&Signature=xxx

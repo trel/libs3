@@ -54,7 +54,7 @@ static int checkString(const char *str, const char *format)
 }
 
 
-int urlEncode(char *dest, const char *src, int maxSrcSize)
+int urlEncode(char *dest, const char *src, int maxSrcSize, int encodeSlash)
 {
     static const char *hex = "0123456789ABCDEF";
 
@@ -67,9 +67,10 @@ int urlEncode(char *dest, const char *src, int maxSrcSize)
         }
         unsigned char c = *src;
         if (isalnum(c) ||
-            (c == '-') || (c == '_') || (c == '.') || (c == '!') || 
-            (c == '~') || (c == '*') || (c == '\'') || (c == '(') ||
-            (c == ')') || (c == '/')) {
+            (c == '-') || (c == '_') || (c == '.') || (c == '~')) {
+            *dest++ = c;
+        }
+        else if (c == '/' && !encodeSlash) {
             *dest++ = c;
         }
         else {
