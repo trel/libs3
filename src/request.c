@@ -368,8 +368,6 @@ static S3Status compose_amz_headers(const RequestParams *params,
         strftime(date, sizeof(date), "%Y%m%dT%H%M%SZ", gmtime_r(&now, &gmt));
         memcpy(values->timestamp, date, sizeof(values->timestamp));
     }
-    headers_append(1, "x-amz-date: %s", date);
-    strftime(date, sizeof(date), "%a, %d %b %Y %H:%M:%S GMT", gmtime_r(&now, &gmt));
 
     // Omit x-amz-date if required
     if(params->bucketContext.stsDate != S3STSDateOnly) {
@@ -1701,8 +1699,6 @@ void request_perform(const RequestParams *params, S3RequestContext *context)
     if (signatureVersionG == S3SignatureV2) {
         // Compute the canonicalized amz headers
         canonicalize_amz_headers(&computed);
-    // Compute the canonicalized amz headers
-    canonicalize_amz_headers(&computed);
 
         // Compute the canonicalized resource
         canonicalize_resource(params->bucketContext.bucketName,
