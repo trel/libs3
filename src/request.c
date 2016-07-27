@@ -1156,12 +1156,12 @@ static S3Status canonicalize_headers(char *buf, int maxlen, int *plen,
 static S3Status calculate_sha256(char *buf, int maxlen, int *plen,
                                  const char *data, int datalen)
 {
-    unsigned char hash[SHA256_DIGEST_LENGTH];
+    unsigned char hash_result[SHA256_DIGEST_LENGTH];
     SHA256_CTX sha256;
     SHA256_Init(&sha256);
     SHA256_Update(&sha256, data, datalen);
-    SHA256_Final(hash, &sha256);
-    string_append_hex(buf, maxlen, plen, (const char *)hash,
+    SHA256_Final(hash_result, &sha256);
+    string_append_hex(buf, maxlen, plen, (const char *)hash_result,
                       SHA256_DIGEST_LENGTH);
     return S3StatusOK;
 }
