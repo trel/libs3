@@ -391,7 +391,7 @@ static S3Status compose_amz_headers(const RequestParams *params,
         // Add the x-amz-copy-source header
         if (params->copySourceBucketName && params->copySourceBucketName[0] &&
             params->copySourceKey && params->copySourceKey[0]) {
-            headers_append(1, "x-amz-copy-source: /%s/%s",
+            headers_append(1, "X-Copy-From: /%s/%s",
                            params->copySourceBucketName,
                            params->copySourceKey);
         }
@@ -409,7 +409,7 @@ static S3Status compose_amz_headers(const RequestParams *params,
 
     // Add the x-amz-security-token header if necessary
     if (params->bucketContext.securityToken) {
-        headers_append(1, "x-amz-security-token: %s",
+        headers_append(1, "X-Auth-Token: %s",
                        params->bucketContext.securityToken);
     }
 
@@ -777,6 +777,15 @@ static const char *http_request_type_to_verb(HttpRequestType requestType)
 static S3Status compose_auth_header(const RequestParams *params,
                                     RequestComputedValues *values)
 {
+    // oracle
+    if (params->bucketContext.securityToken && strlen(params->bucketContext.securityToken)) {
+        // auth header handled in compose_amz_headers()
+        return S3StatusOK;
+    }
+    // oracle
+
+
+
     // We allow for:
     // 17 bytes for HTTP-Verb + \n
     // 129 bytes for Content-MD5 + \n
@@ -822,13 +831,28 @@ static S3Status compose_auth_header(const RequestParams *params,
     // Now base-64 encode the results
     char b64[((20 + 1) * 4) / 3];
     int b64Len = base64Encode(hmac, 20, b64);
-    
+
     snprintf(values->authorizationHeader, sizeof(values->authorizationHeader),
              "Authorization: AWS %s:%.*s", params->bucketContext.accessKeyId,
              b64Len, b64);
 
     return S3StatusOK;
 }
+
+
+// Composes the Authorization header for the request
+//static S3Status compose_oracle_auth_header(const RequestParams *params,
+//                                    RequestComputedValues *values)
+//{
+//    // If no security token is present
+//    if (!params->bucketContext.securityToken || !strlen(params->bucketContext.securityToken)) {
+//
+//    }
+//    snprintf(values->authorizationHeader, sizeof(values->authorizationHeader),
+//             "%s", "X-Auth-Token: AUTH_tk8537fc25a987e99aba98e539d363a2c7");
+//
+//    return S3StatusOK;
+//}
 
 
 // Compose the URI to use for the request given the request parameters
@@ -1728,6 +1752,10 @@ void request_perform(const RequestParams *params, S3RequestContext *context)
             }
     }
 
+    //////////
+    // curl_easy_setopt(request->curl, CURLOPT_VERBOSE, 1L);
+    //////////
+
     // If a RequestContext was provided, add the request to the curl multi
     if (context) {
         CURLMcode code = curl_multi_add_handle(context->curlm, request->curl);
@@ -1946,4 +1974,153 @@ S3Status S3_generate_authenticated_query_string
 
     return compose_uri(buffer, S3_MAX_AUTHENTICATED_QUERY_STRING_SIZE,
                        bucketContext, urlEncodedKey, resource, queryParams);
+}
+
+
+void S3_request_auth_token(
+        const char *access_key_id,
+        const char *secret_access_key,
+        const S3ResponseHandler *handler,
+        void *callbackData )
+{
+    Request *request;
+    S3Status status;
+
+    // pass keys through put properties
+    int metaPropertiesCount = 0;
+    S3NameValue metaProperties[S3_MAX_METADATA_COUNT];
+
+    metaProperties[metaPropertiesCount].name = "Storage-User";
+    metaProperties[metaPropertiesCount++].value = access_key_id;
+
+    metaProperties[metaPropertiesCount].name = "Storage-Pass";
+    metaProperties[metaPropertiesCount++].value = secret_access_key;
+
+    S3PutProperties properties;
+    memset(&properties, 0, sizeof(S3PutProperties));
+    properties.metaData = metaProperties;
+    properties.metaDataCount = metaPropertiesCount;
+
+    // extract domain from access key id
+    char url[S3_MAX_HOSTNAME_SIZE] = "";
+    const char *domain_start = access_key_id + strlen("Storage-");
+    char *domain_end = strchr(domain_start, ':');
+    size_t domain_length = (domain_end - domain_start < S3_MAX_HOSTNAME_SIZE) ? domain_end - domain_start : 0;
+
+    // set up url as "mydomain.storage.oraclecloud.com/auth/v1.0"
+    strncat(url, domain_start, domain_length);
+    strncat(url, ".storage.oraclecloud.com/auth/v1.0", S3_MAX_HOSTNAME_SIZE - domain_length);
+
+
+    // Set up the RequestParams
+    RequestParams params =
+    {
+        HttpRequestTypeGET,                           // httpRequestType
+        { url,                                        // hostName
+          NULL,                                       // bucketName
+          S3ProtocolHTTPS,                            // protocol
+          S3UriStylePath,                             // uriStyle
+          NULL,                                       // accessKeyId
+          NULL,                                       // secretAccessKey
+          NULL,                                       // securityToken
+          S3STSDateOnly },                            // stsDate
+        NULL,                                         // key
+        0,                                            // queryParams
+        0,                                            // subResource
+        0,                                            // copySourceBucketName
+        0,                                            // copySourceKey
+        0,                                            // getConditions
+        0,                                            // startByte
+        0,                                            // byteCount
+        &properties,                                  // putProperties
+        handler->propertiesCallback,                  // propertiesCallback
+        0,                                            // toS3Callback
+        0,                                            // toS3CallbackTotalSize
+        0,                                            // fromS3Callback
+        handler->completeCallback,                    // completeCallback
+        callbackData                                  // callbackData
+    };
+
+
+#define my_return_status(status)                                         \
+    (*(params.completeCallback))(status, 0, params.callbackData);     \
+    return
+
+
+    // These will hold the computed values
+    RequestComputedValues computed;
+    memset(&computed, 0, sizeof(computed));
+
+    // Compose the amz headers
+    if ((status = compose_amz_headers(&params, &computed)) != S3StatusOK) {
+        my_return_status(status);
+    }
+
+    // Compose standard headers
+    if ((status = compose_standard_headers
+         (&params, &computed)) != S3StatusOK) {
+        my_return_status(status);
+    }
+
+    // Get an initialized Request structure now
+    if ((status = request_get(&params, &computed, &request)) != S3StatusOK) {
+        my_return_status(status);
+    }
+
+    //////////
+    // curl_easy_setopt(request->curl, CURLOPT_VERBOSE, 1L);
+    //////////
+
+    CURLcode code = curl_easy_perform(request->curl);
+    if ((code != CURLE_OK) && (request->status == S3StatusOK)) {
+        request->status = request_curl_code_to_status(code);
+    }
+
+    // Finish the request, ensuring that all callbacks have been made, and
+    // also releases the request
+    request_finish(request);
+
+}
+
+
+void S3_get_restore_job_status(
+        const S3BucketContext *bucketContext,
+        const char *job_id,
+        const S3GetObjectHandler *handler,
+        void *callbackData)
+{
+    char query_params[S3_MAX_METADATA_SIZE];
+    snprintf(query_params, S3_MAX_METADATA_SIZE, "jobs&jobId=%s", job_id);
+
+    // Set up the RequestParams
+    RequestParams params =
+    {
+        HttpRequestTypeGET,                           // httpRequestType
+        { bucketContext->hostName,                    // hostName
+          bucketContext->bucketName,                  // bucketName
+          bucketContext->protocol,                    // protocol
+          S3UriStylePath,                             // uriStyle
+          NULL,                                       // accessKeyId
+          NULL,                                       // secretAccessKey
+          bucketContext->securityToken,               // securityToken
+          S3STSDateOnly },                            // stsDate
+        NULL,                                         // key
+        query_params,                                 // queryParams
+        0,                                            // subResource
+        0,                                            // copySourceBucketName
+        0,                                            // copySourceKey
+        0,                                            // getConditions
+        0,                                            // startByte
+        0,                                            // byteCount
+        0,                                            // putProperties
+        handler->responseHandler.propertiesCallback,  // propertiesCallback
+        0,                                            // toS3Callback
+        0,                                            // toS3CallbackTotalSize
+        handler->getObjectDataCallback,               // fromS3Callback
+        handler->responseHandler.completeCallback,    // completeCallback
+        callbackData                                  // callbackData
+    };
+
+    // Perform the request
+    request_perform(&params, NULL);
 }

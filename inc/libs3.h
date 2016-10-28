@@ -126,7 +126,7 @@ extern "C" {
 /**
  * This is the default hostname that is being used for the S3 requests
  **/
-#define S3_DEFAULT_HOSTNAME                "s3.amazonaws.com"
+#define S3_DEFAULT_HOSTNAME                "em2.storage.oraclecloud.com"
 
 
 /**
@@ -151,7 +151,7 @@ extern "C" {
 /**
  * S3_METADATA_HEADER_NAME_PREFIX is the prefix of an S3 "meta header"
  **/
-#define S3_METADATA_HEADER_NAME_PREFIX     "x-amz-meta-"
+#define S3_METADATA_HEADER_NAME_PREFIX     "X-"
 
 
 /**
@@ -2139,6 +2139,25 @@ void S3_delete_object(const S3BucketContext *bucketContext, const char *key,
                       const S3ResponseHandler *handler, void *callbackData);
 
 
+/**
+ * Restores an object from deep archive storage.
+ *
+ * @param bucketContext gives the bucket and associated parameters for this
+ *        request
+ * @param key is the key of the object to restore
+ * @param requestContext if non-NULL, gives the S3RequestContext to add this
+ *        request to, and does not perform the request immediately.  If NULL,
+ *        performs the request immediately and synchronously.
+ * @param handler gives the callbacks to call as the request is processed and
+ *        completed
+ * @param callbackData will be passed in as the callbackData parameter to
+ *        all callbacks for this request
+ **/
+void S3_restore_object(const S3BucketContext *bucketContext, const char *key,
+                      S3RequestContext *requestContext,
+                      const S3ResponseHandler *handler, void *callbackData);
+
+
 /** **************************************************************************
  * Access Control List Functions
  ************************************************************************** **/
@@ -2465,6 +2484,24 @@ void S3_list_multipart_uploads(S3BucketContext *bucketContext,
                                int maxuploads, S3RequestContext *requestContext,
                                const S3ListMultipartUploadsHandler *handler,
                                void *callbackData);
+
+/*
+ * This operation gets an authentication token (Oracle Storage Cloud Service)
+ */
+void S3_request_auth_token(
+        const char *access_key_id,
+        const char *secret_access_key,
+        const S3ResponseHandler *handler,
+        void *callbackData );
+
+/*
+ * This operation gets the status of a restore job
+ */
+void S3_get_restore_job_status(
+        const S3BucketContext *bucketContext,
+        const char *job_id,
+        const S3GetObjectHandler *handler,
+        void *callbackData);
 
 #ifdef __cplusplus
 }

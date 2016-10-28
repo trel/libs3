@@ -2641,7 +2641,7 @@ static void copy_object(int argc, char **argv, int optindex)
         accessKeyIdG,
         secretAccessKeyG,
         0,
-        0
+        stsDateG
     };
     S3ListBucketHandler listBucketHandler =
     {

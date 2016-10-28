@@ -382,3 +382,43 @@ void S3_delete_object(const S3BucketContext *bucketContext, const char *key,
     // Perform the request
     request_perform(&params, requestContext);
 }
+
+
+// restore object --------------------------------------------------------------
+
+void S3_restore_object(const S3BucketContext *bucketContext, const char *key,
+                      S3RequestContext *requestContext,
+                      const S3ResponseHandler *handler, void *callbackData)
+{
+    // Set up the RequestParams
+    RequestParams params =
+    {
+        HttpRequestTypePOST,                        // httpRequestType
+        { bucketContext->hostName,                    // hostName
+          bucketContext->bucketName,                  // bucketName
+          bucketContext->protocol,                    // protocol
+          bucketContext->uriStyle,                    // uriStyle
+          bucketContext->accessKeyId,                 // accessKeyId
+          bucketContext->secretAccessKey,             // secretAccessKey
+          bucketContext->securityToken,               // securityToken
+          bucketContext->stsDate },                   // stsDate
+        key,                                          // key
+        "restore",                                    // queryParams
+        0,                                            // subResource
+        0,                                            // copySourceBucketName
+        0,                                            // copySourceKey
+        0,                                            // getConditions
+        0,                                            // startByte
+        0,                                            // byteCount
+        0,                                            // putProperties
+        handler->propertiesCallback,                  // propertiesCallback
+        0,                                            // toS3Callback
+        0,                                            // toS3CallbackTotalSize
+        0,                                            // fromS3Callback
+        handler->completeCallback,                    // completeCallback
+        callbackData                                  // callbackData
+    };
+
+    // Perform the request
+    request_perform(&params, requestContext);
+}

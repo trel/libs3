@@ -692,8 +692,13 @@ void S3_list_bucket(const S3BucketContext *bucketContext, const char *prefix,
     if (maxkeys) {
         char maxKeysString[64];
         snprintf(maxKeysString, sizeof(maxKeysString), "%d", maxkeys);
-        safe_append("max-keys", maxKeysString);
+        safe_append("limit", maxKeysString);
     }
+
+//    // oracle OSCS
+//    // use xml to get extended object info
+//    safe_append("format", "xml");
+//    // oracle
 
     ListBucketData *lbData =
         (ListBucketData *) malloc(sizeof(ListBucketData));
