@@ -1753,7 +1753,7 @@ void request_perform(const RequestParams *params, S3RequestContext *context)
     }
 
     //////////
-    // curl_easy_setopt(request->curl, CURLOPT_VERBOSE, 1L);
+    curl_easy_setopt(request->curl, CURLOPT_VERBOSE, 1L);
     //////////
 
     // If a RequestContext was provided, add the request to the curl multi
@@ -2068,7 +2068,7 @@ void S3_request_auth_token(
     }
 
     //////////
-    // curl_easy_setopt(request->curl, CURLOPT_VERBOSE, 1L);
+    curl_easy_setopt(request->curl, CURLOPT_VERBOSE, 1L);
     //////////
 
     CURLcode code = curl_easy_perform(request->curl);
