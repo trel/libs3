@@ -104,7 +104,8 @@ static S3Status copyObjectXmlCallback(const char *elementPath,
         if (!strcmp(elementPath, "CopyObjectResult/LastModified")) {
             string_buffer_append(coData->lastModified, data, dataLen, fit);
         }
-        else if (!strcmp(elementPath, "CopyObjectResult/ETag")) {
+        else if (!strcmp(elementPath, "CopyObjectResult/ETag")
+              || !strcmp(elementPath, "CopyPartResult/ETag")) {
             if (coData->eTagReturnSize && coData->eTagReturn) {
                 coData->eTagReturnLen +=
                     snprintf(&(coData->eTagReturn[coData->eTagReturnLen]),
