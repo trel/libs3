@@ -485,16 +485,27 @@ uint64_t hash(const unsigned char *k, int length)
         
         switch(length) {
         case 12: c += ((uint32_t) k[11]) << 24;
+        // fall through
         case 11: c += ((uint32_t) k[10]) << 16;
+        // fall through
         case 10: c += ((uint32_t) k[9]) << 8;
+        // fall through
         case 9 : c += k[8];
+        // fall through
         case 8 : b += ((uint32_t) k[7]) << 24;
+        // fall through
         case 7 : b += ((uint32_t) k[6]) << 16;
+        // fall through
         case 6 : b += ((uint32_t) k[5]) << 8;
+        // fall through
         case 5 : b += k[4];
+        // fall through
         case 4 : a += ((uint32_t) k[3]) << 24;
+        // fall through
         case 3 : a += ((uint32_t) k[2]) << 16;
+        // fall through
         case 2 : a += ((uint32_t) k[1]) << 8;
+        // fall through
         case 1 : a += k[0]; break;
         case 0 : goto end;
         }
@@ -525,16 +536,27 @@ uint64_t hash(const unsigned char *k, int length)
 
         switch(length) {
         case 12: c += k[11];
+        // fall through
         case 11: c += ((uint32_t) k[10]) << 8;
+        // fall through
         case 10: c += ((uint32_t) k[9]) << 16;
+        // fall through
         case 9 : c += ((uint32_t) k[8]) << 24;
+        // fall through
         case 8 : b += k[7];
+        // fall through
         case 7 : b += ((uint32_t) k[6]) << 8;
+        // fall through
         case 6 : b += ((uint32_t) k[5]) << 16;
+        // fall through
         case 5 : b += ((uint32_t) k[4]) << 24;
+        // fall through
         case 4 : a += k[3];
+        // fall through
         case 3 : a += ((uint32_t) k[2]) << 8;
+        // fall through
         case 2 : a += ((uint32_t) k[1]) << 16;
+        // fall through
         case 1 : a += ((uint32_t) k[0]) << 24; break;
         case 0 : goto end;
         }

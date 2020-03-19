@@ -1632,17 +1632,25 @@ S3Status request_api_initialize(const char *userAgentInfo, int flags,
 
     char platform[96];
     struct utsname utsn;
+    int snprintf_ret = 0;
     if (uname(&utsn)) {
-        snprintf(platform, sizeof(platform), "Unknown");
+        snprintf_ret = snprintf(platform, sizeof(platform), "Unknown");
     }
     else {
-        snprintf(platform, sizeof(platform), "%s%s%s", utsn.sysname, 
+        snprintf_ret = snprintf(platform, sizeof(platform), "%s%s%s", utsn.sysname, 
                  utsn.machine[0] ? " " : "", utsn.machine);
     }
 
-    snprintf(userAgentG, sizeof(userAgentG), 
+    if (snprintf_ret < 0) {
+        return S3StatusInternalError;
+    }
+
+    snprintf_ret = snprintf(userAgentG, sizeof(userAgentG), 
              "Mozilla/4.0 (Compatible; %s; libs3 %s.%s; %s)",
              userAgentInfo, LIBS3_VER_MAJOR, LIBS3_VER_MINOR, platform);
+    if (snprintf_ret < 0) {
+        return S3StatusInternalError;
+    }
     
     return S3StatusOK;
 }
